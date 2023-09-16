@@ -1,27 +1,60 @@
-from django.db import models
-
-class Property(models.Model):
-    property_name = models.CharField(max_length=255)
-    property_cost = models.CharField(max_length=50)
-    property_type = models.CharField(max_length=100)
-    property_area = models.CharField(max_length=50)
-    property_locality = models.CharField(max_length=255)
-    property_city = models.CharField(max_length=255)
-    property_link = models.URLField()
-
-    def __str__(self):
-        return self.property_name
-import requests
 from bs4 import BeautifulSoup
-from django.core.management.base import BaseCommand
-from property_scraper.models import Property
+import requests
+from selenium import webdriver
+import pandas as pd
 
-class Command(BaseCommand):
-    help = 'Scrape property data from 99acres and store it in MongoDB'
+driver = webdriver.Chrome('C:\chromedriver')
 
-    def handle(self, *args, **kwargs):
-        # Your scraping logic here
-        pass
-CRONJOBS = [
-    ('0 0,12 * * *', 'python manage.py scrape_properties'),
-]
+for i in range(24):
+    driver.get('https://www.99acres.com/property-in-indore-ffid-page-'+str(i))
+
+    content = driver.page_source
+    soup = BeautifulSoup(content)
+    results =  soup.findAll('div', attrs = {'class' : 'pageComponent srpTuple__srpTupleBox srp'})
+
+    Configuration = []
+    Description = []
+    Location_Bldng_name = []
+    Seller_name = []
+    Price = []
+    Price_unit = []
+    Area = []
+    Type_area = []
+    property_link=[]
+
+    for row in results:
+
+        Configuration.append(row.h2.text)
+
+        Location_Bldng_name.append(row.find('td', attrs = {'class' : 'list_header_bold srpTuple__spacer10'}).get_text())
+
+        Seller_name.append(row.find('div', attrs = {'class' : 'list_header_semiBold'}).get_text())
+
+        Description.append(row.find('div', attrs = {'class' : 'srpTuple__descMore body_med'}).get_text())
+
+        Type_area.append(row.find('div', attrs = {'class' : 'caption_subdued_small','id' : 'srp_tuple_secondary_area'}).get_text())
+        
+        property_link.append(row.find('td',attrs={'class':'srpTuple__tdClassPremium','id':'srp_tuple_property_link'}).get_text())
+
+        Price.append(row.find('td', attrs = {'class' : 'srpTuple__midGrid title_semiBold srpTuple__spacer16','id' : 'srp_tuple_price'}).text[0:5])
+                                            
+        Price_unit.append(row.find('td', attrs = {'class' : 'srpTuple__midGrid title_semiBold srpTuple__spacer16','id' : 'srp_tuple_price'}).text[4:8])
+                                            
+        Area.append(row.find('td', attrs = {'class' : 'srpTuple__midGrid title_semiBold srpTuple__spacer16','id' : 'srp_tuple_primary_area'}).text[0:11])
+                                            
+        
+        
+
+    df = pd.DataFrame({
+        'Configuration' : Configuration,
+        'Location/Bldng_name' : Location_Bldng_name,
+        'Seller Name' : Seller_name,
+        'Description' : Description,
+        'Area' : Area,
+        'Area type' : Type_area,
+        'Price' : Price,
+        'Price Unit' : Price_unit,
+        'property_link':property_link
+    })
+
+    df.to_csv(r'C:\\Users\\vivek\\Desktop\\99acres Scrapper\\99acres.csv', header=False, mode = 'a')
