@@ -57,4 +57,4 @@ for i in range(24):
         'property_link':property_link
     })
 
-    df.to_csv(r'C:\\Users\\vivek\\Desktop\\99acres Scrapper\\99acres.csv', header=False, mode = 'a')
+    df.to_csv(r'C:\\99acres.csv', header=False, mode = 'a')
