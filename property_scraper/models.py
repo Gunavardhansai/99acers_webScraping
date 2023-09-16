@@ -23,3 +23,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # Your scraping logic here
         pass
+
+CRONJOBS = [
+    ('0 0,12 * * *', 'python manage.py scrape_properties'),
+]
